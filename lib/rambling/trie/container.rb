@@ -106,6 +106,18 @@ module Rambling
         words_within_root(phrase).any?
       end
 
+      def longest_words_within phrase
+        longest_words_within_root(phrase).to_a
+      end
+
+      def words_prefix phrase
+        words_prefix_root(phrase).to_a
+      end
+
+      def longest_words_prefix phrase
+        longest_words_prefix_root(phrase)
+      end
+
       # Compares two trie data structures.
       # @param [Container] other the trie to compare against.
       # @return [Boolean] `true` if the tries are equal, `false` otherwise.
@@ -133,6 +145,58 @@ module Rambling
             yield word
           end
         end
+      end
+
+      def words_prefix_root phrase
+        return enum_for :words_prefix_root, phrase unless block_given?
+
+        chars = phrase.chars
+        new_phrase = chars.slice 0..(chars.length - 1)
+        root.match_prefix new_phrase do |word|
+          yield word
+        end
+      end
+
+      def longest_words_within_root phrase
+        return enum_for :longest_words_within_root, phrase unless block_given?
+
+        chars = phrase.chars
+        starting_index = 0
+        loop do
+          new_phrase = chars.slice starting_index..(chars.length - 1)
+          words = root.match_prefix(new_phrase)
+          longest_word = nil
+          words.each do | word |
+            if longest_word.nil?
+              longest_word = word
+            elsif longest_word.size < word.size
+              longest_word = word
+            end
+          end
+          if longest_word.nil?
+            starting_index += 1
+          else
+            yield longest_word
+            starting_index += longest_word.size
+          end
+          break if starting_index >= chars.length
+        end
+      end
+
+      def longest_words_prefix_root phrase
+        chars = phrase.chars
+
+        new_phrase = chars.slice 0..(chars.length - 1)
+        words = root.match_prefix(new_phrase)
+        longest_word = nil
+        words.each do | word |
+          if longest_word.nil?
+            longest_word = word
+          elsif longest_word.size < word.size
+            longest_word = word
+          end
+        end
+        longest_word
       end
     end
   end
