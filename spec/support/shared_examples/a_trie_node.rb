@@ -21,7 +21,8 @@ shared_examples_for 'a trie node' do
     end
 
     context 'with a letter and a parent' do
-      let(:parent) { node.class.new }
+      let(:parent) { node_class.new }
+      # noinspection RubyArgCount
       let(:node_with_parent) { node_class.new :a, parent }
 
       it 'does not have any letter' do
@@ -40,9 +41,7 @@ shared_examples_for 'a trie node' do
 
   describe '#root?' do
     context 'when the node has a parent' do
-      before do
-        node.parent = node
-      end
+      before { node.parent = node }
 
       it 'returns false' do
         expect(node).not_to be_root
@@ -50,9 +49,7 @@ shared_examples_for 'a trie node' do
     end
 
     context 'when the node does not have a parent' do
-      before do
-        node.parent = nil
-      end
+      before { node.parent = nil }
 
       it 'returns true' do
         expect(node).to be_root
@@ -61,12 +58,13 @@ shared_examples_for 'a trie node' do
   end
 
   describe '#terminal!' do
+    # rubocop:disable RSpec/MultipleExpectations
     it 'forces the node to be terminal' do
       expect(node).not_to be_terminal
       node.terminal!
-
       expect(node).to be_terminal
     end
+    # rubocop:enable RSpec/MultipleExpectations
 
     it 'returns the node' do
       expect(node.terminal!).to eq node
@@ -74,8 +72,9 @@ shared_examples_for 'a trie node' do
   end
 
   describe 'delegates and aliases' do
-    let(:children_tree) do
-      double(
+    let :children_tree do
+      instance_double(
+        'Hash',
         :children_tree,
         :[] => 'value',
         :[]= => nil,
@@ -84,20 +83,21 @@ shared_examples_for 'a trie node' do
       )
     end
 
-    before do
-      node.children_tree = children_tree
-    end
+    before { node.children_tree = children_tree }
 
+    # rubocop:disable RSpec/MultipleExpectations
     it 'delegates `#[]` to its children tree' do
       expect(node[:key]).to eq 'value'
       expect(children_tree).to have_received(:[]).with :key
     end
+    # rubocop:enable RSpec/MultipleExpectations
 
     it 'delegates `#[]=` to its children tree' do
       node[:key] = 'value'
       expect(children_tree).to have_received(:[]=).with(:key, 'value')
     end
 
+    # rubocop:disable RSpec/MultipleExpectations
     it 'delegates `#key?` to its children tree' do
       allow(children_tree).to receive(:key?)
         .with(:present_key)
@@ -106,18 +106,26 @@ shared_examples_for 'a trie node' do
       expect(node).to have_key(:present_key)
       expect(node).not_to have_key(:absent_key)
     end
+    # rubocop:enable RSpec/MultipleExpectations
 
+    # rubocop:disable RSpec/MultipleExpectations
     it 'delegates `#delete` to its children tree' do
       expect(node.delete :key).to be true
       expect(children_tree).to have_received(:delete).with :key
     end
+    # rubocop:enable RSpec/MultipleExpectations
 
+    # rubocop:disable RSpec/ExampleLength
     it 'delegates `#children` to its children tree values' do
-      children = [double(:child_1), double(:child_2)]
+      children = [
+        instance_double('Rambling::Trie::Nodes::Node', :child_one),
+        instance_double('Rambling::Trie::Nodes::Node', :child_two),
+      ]
       allow(children_tree).to receive(:values).and_return children
 
       expect(node.children).to eq children
     end
+    # rubocop:enable RSpec/ExampleLength
 
     it 'aliases `#has_key?` to `#key?`' do
       node.has_key? :nope

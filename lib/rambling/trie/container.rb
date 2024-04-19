@@ -13,7 +13,7 @@ module Rambling
       # Creates a new trie.
       # @param [Nodes::Node] root the root node for the trie
       # @param [Compressor] compressor responsible for compressing the trie
-      # @yield [Container] the trie just created.
+      # @yield [self] the trie just initialized.
       def initialize root, compressor
         @root = root
         @compressor = compressor
@@ -41,72 +41,61 @@ module Rambling
         words.map { |word| add word }
       end
 
-      # Compresses the existing trie using redundant node elimination. Marks
-      # the trie as compressed. Does nothing if the trie has already been
-      # compressed.
-      # @return [Container] self
-      # @note This method replaces the root {Nodes::Raw Raw} node with a
-      #   {Nodes::Compressed Compressed} version of it.
+      # Compresses the existing trie using redundant node elimination.
+      # Marks the trie as compressed.
+      # Does nothing if the trie has already been compressed.
+      # @return [self]
+      # @note This method replaces the root {Nodes::Raw Raw} node with a {Nodes::Compressed Compressed} version of it.
       def compress!
         self.root = compress_root unless root.compressed?
         self
       end
 
-      # Compresses the existing trie using redundant node elimination. Returns
-      # a new trie with the compressed root.
-      # @return [Container] A new {Container} with the {Nodes::Compressed
-      #   Compressed} root node or self if the trie has already been
-      #   compressed.
+      # Compresses the existing trie using redundant node elimination. Returns a new trie with the compressed root.
+      # @return [Container] A new {Container} with the {Nodes::Compressed Compressed} root node
+      #   or self if the trie has already been compressed.
       def compress
         return self if root.compressed?
+
         Rambling::Trie::Container.new compress_root, compressor
       end
 
       # Checks if a path for a word or partial word exists in the trie.
       # @param [String] word the word or partial word to look for in the trie.
-      # @return [Boolean] `true` if the word or partial word is found, `false`
-      #   otherwise.
-      # @see Nodes::Raw#partial_word?
-      # @see Nodes::Compressed#partial_word?
+      # @return [Boolean] +true+ if the word or partial word is found, +false+ otherwise.
+      # @see Nodes::Node#partial_word?
       def partial_word? word = ''
         root.partial_word? word.chars
       end
 
       # Checks if a whole word exists in the trie.
       # @param [String] word the word to look for in the trie.
-      # @return [Boolean] `true` only if the word is found and the last
-      #   character corresponds to a terminal node, `false` otherwise.
-      # @see Nodes::Raw#word?
-      # @see Nodes::Compressed#word?
+      # @return [Boolean] +true+ only if the word is found and the last character corresponds to a terminal node,
+      #   +false+ otherwise.
+      # @see Nodes::Node#word?
       def word? word = ''
         root.word? word.chars
       end
 
       # Returns all words that start with the specified characters.
       # @param [String] word the word to look for in the trie.
-      # @return [Array<String>] all the words contained in the trie that start
-      #   with the specified characters.
-      # @see Nodes::Raw#scan
-      # @see Nodes::Compressed#scan
+      # @return [Array<String>] all the words contained in the trie that start with the specified characters.
+      # @see Nodes::Node#scan
       def scan word = ''
         root.scan(word.chars).to_a
       end
 
-      # Returns all words within a string that match a word contained in the
-      # trie.
+      # Returns all words within a string that match a word contained in the trie.
       # @param [String] phrase the string to look for matching words in.
-      # @return [Enumerator<String>] all the words in the given string that
-      #   match a word in the trie.
+      # @return [Enumerator<String>] all the words in the given string that match a word in the trie.
       # @yield [String] each word found in phrase.
-      # @see Nodes::Node#words_within
       def words_within phrase
         words_within_root(phrase).to_a
       end
 
       # Checks if there are any valid words in a given string.
       # @param [String] phrase the string to look for matching words in.
-      # @return [Boolean] `true` if any word within phrase is contained in the
-      #   trie, `false` otherwise.
+      # @return [Boolean] +true+ if any word within phrase is contained in the trie, +false+ otherwise.
       # @see Container#words_within
       def words_within? phrase
         words_within_root(phrase).any?
@@ -126,13 +115,14 @@ module Rambling
 
       # Compares two trie data structures.
       # @param [Container] other the trie to compare against.
-      # @return [Boolean] `true` if the tries are equal, `false` otherwise.
+      # @return [Boolean] +true+ if the tries are equal, +false+ otherwise.
       def == other
         root == other.root
       end
 
       # Iterates over the words contained in the trie.
       # @yield [String] the words contained in this trie node.
+      # @return [self]
       def each
         return enum_for :each unless block_given?
 
@@ -155,33 +145,29 @@ module Rambling
       end
 
       # Root node's child nodes.
-      # @return [Array<Nodes::Node>] the array of children nodes contained in
-      #   the root node.
+      # @return [Array<Nodes::Node>] the array of children nodes contained in the root node.
       # @see Nodes::Node#children
       def children
         root.children
       end
 
       # Root node's children tree.
-      # @return [Array<Nodes::Node>] the array of children nodes contained in
-      #   the root node.
+      # @return [Hash<Symbol, Nodes::Node>] the children tree hash contained in the root node, consisting of
+      #   +:letter => node+.
       # @see Nodes::Node#children_tree
       def children_tree
         root.children_tree
       end
 
-      # Indicates if the root {Nodes::Node Node} can be
-      # compressed or not.
-      # @return [Boolean] `true` for non-{Nodes::Node#terminal? terminal}
-      #    nodes with one child, `false` otherwise.
+      # Indicates if the root {Nodes::Node Node} can be compressed or not.
+      # @return [Boolean] +true+ for non-{Nodes::Node#terminal? terminal} nodes with one child, +false+ otherwise.
       def compressed?
         root.compressed?
       end
 
       # Array of words contained in the root {Nodes::Node Node}.
       # @return [Array<String>] all words contained in this trie.
-      # @see https://ruby-doc.org/core-2.5.0/Enumerable.html#method-i-to_a
-      #   Enumerable#to_a
+      # @see https://ruby-doc.org/core-2.7.0/Enumerable.html#method-i-to_a Enumerable#to_a
       def to_a
         root.to_a
       end

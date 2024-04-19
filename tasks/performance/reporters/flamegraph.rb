@@ -6,6 +6,7 @@ module Performance
   module Reporters
     class Flamegraph < Performance::Reporters::Reporter
       def initialize filename
+        super()
         @filename = filename
       end
 
@@ -14,11 +15,7 @@ module Performance
 
         require 'flamegraph'
         ::Flamegraph.generate filepath do
-          params.each do |param|
-            iterations.times do
-              yield param
-            end
-          end
+          params.each { |p| iterations.times { yield p } }
         end
       end
 
