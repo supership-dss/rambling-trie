@@ -33,7 +33,7 @@ Gem::Specification.new do |gem|
   gem.license = 'MIT'
   gem.version = Rambling::Trie::VERSION
   gem.platform = Gem::Platform::RUBY
-  gem.required_ruby_version = '>= 2.7', '< 4'
+  gem.required_ruby_version = '>= 2.6', '< 4'
 
   gem.add_development_dependency 'rake', '~> 13.1'
   gem.add_development_dependency 'rspec', '~> 3.12'
