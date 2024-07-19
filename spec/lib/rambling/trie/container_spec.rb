@@ -313,6 +313,24 @@ describe Rambling::Trie::Container do
         it_behaves_like 'a non-matching container#words_within'
       end
     end
+
+    context 'longest match' do
+      it 'returns an array with all words found in the phrase' do
+        expect(container.longest_words_within 'words').to match_array %w(words)
+      end
+    end
+
+    context 'prefix match' do
+      it 'returns an array with all words found in the phrase' do
+        expect(container.words_prefix 'oneabc').to match_array %w(one)
+      end
+    end
+
+    context 'longest prefix match' do
+      it 'returns a word found in the phrase' do
+        expect(container.longest_words_prefix 'oneabc').to eq "one"
+      end
+    end
   end
 
   describe '#words_within?' do
