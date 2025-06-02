@@ -6,6 +6,7 @@ module Performance
   module Reporters
     class MemoryProfile < Performance::Reporters::Reporter
       def initialize filename
+        super()
         @filename = filename
       end
 
@@ -18,11 +19,7 @@ module Performance
           ignore_files: 'lib/rambling/trie/tasks',
         ) do
           with_gc_stats "performing #{filename}" do
-            params.each do |param|
-              iterations.times do
-                yield param
-              end
-            end
+            params.each { |p| iterations.times { yield p } }
           end
         end
 
