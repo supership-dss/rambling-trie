@@ -6,8 +6,11 @@ module Rambling
     module Enumerable
       include ::Enumerable
 
+      # Empty enumerator constant for early each exits.
+      EMPTY_ENUMERATOR = [].to_enum :each
+
       # Returns number of words contained in the trie
-      # @see https://ruby-doc.org/core-2.7.0/Enumerable.html#method-i-count Enumerable#count
+      # @see https://ruby-doc.org/3.3.0/Enumerable.html#method-i-count Enumerable#count
       alias_method :size, :count
 
       # Iterates over the words contained in the trie.
@@ -18,11 +21,7 @@ module Rambling
 
         yield as_word if terminal?
 
-        children_tree.each_value do |child|
-          child.each do |word|
-            yield word
-          end
-        end
+        children_tree.each_value { |child| child.each { |word| yield word } }
 
         self
       end

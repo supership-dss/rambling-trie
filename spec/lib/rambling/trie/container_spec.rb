@@ -34,6 +34,12 @@ describe Rambling::Trie::Container do
       expect(root.children.size).to eq 1
       expect(root.to_a).to eq %w(hello)
     end
+
+    it 'does nothing with empty strings' do
+      add_word container, ''
+      expect(root.children.size).to eq 0
+      expect(root.to_a).to be_empty
+    end
     # rubocop:enable RSpec/MultipleExpectations
   end
 
@@ -169,34 +175,22 @@ describe Rambling::Trie::Container do
     end
   end
 
-  describe '#word?' do
-    it_behaves_like 'a propagating node' do
-      let(:method_name) { :word? }
+  describe '#push' do
+    # rubocop:disable RSpec/MultipleExpectations
+    it 'adds all the words to the root node' do
+      container.push 'other', 'words'
+
+      expect(root.children.size).to eq 2
+      expect(root.to_a).to eq %w(other words)
     end
 
-    context 'when word is contained' do
-      before { add_words container, %w(hello high) }
+    it 'returns all the corresponding nodes' do
+      nodes = container.push 'other', 'words'
 
-      it_behaves_like 'a matching container#word'
-
-      context 'with compressed root' do
-        before { container.compress! }
-
-        it_behaves_like 'a matching container#word'
-      end
+      expect(nodes.first.letter).to eq :o
+      expect(nodes.last.letter).to eq :w
     end
-
-    context 'when word is not contained' do
-      before { add_word container, 'hello' }
-
-      it_behaves_like 'a non-matching container#word'
-
-      context 'with compressed root' do
-        before { container.compress! }
-
-        it_behaves_like 'a non-matching container#word'
-      end
-    end
+    # rubocop:enable RSpec/MultipleExpectations
   end
 
   describe '#partial_word?' do
@@ -227,6 +221,36 @@ describe Rambling::Trie::Container do
         before { container.compress! }
 
         it_behaves_like 'a non-matching container#partial_word'
+      end
+    end
+  end
+
+  describe '#word?' do
+    it_behaves_like 'a propagating node' do
+      let(:method_name) { :word? }
+    end
+
+    context 'when word is contained' do
+      before { add_words container, %w(hello high) }
+
+      it_behaves_like 'a matching container#word'
+
+      context 'with compressed root' do
+        before { container.compress! }
+
+        it_behaves_like 'a matching container#word'
+      end
+    end
+
+    context 'when word is not contained' do
+      before { add_word container, 'hello' }
+
+      it_behaves_like 'a non-matching container#word'
+
+      context 'with compressed root' do
+        before { container.compress! }
+
+        it_behaves_like 'a non-matching container#word'
       end
     end
   end
@@ -268,14 +292,14 @@ describe Rambling::Trie::Container do
 
     context 'when phrase does not contain any words' do
       it 'returns an empty array' do
-        expect(container.words_within 'xyz').to match_array []
+        expect(container.words_within 'xyz').to be_empty
       end
 
       context 'with compressed node' do
         before { container.compress! }
 
         it 'returns an empty array' do
-          expect(container.words_within 'xyz').to match_array []
+          expect(container.words_within 'xyz').to be_empty
         end
       end
     end
@@ -372,6 +396,11 @@ describe Rambling::Trie::Container do
 
   describe '#each' do
     before { add_words container, %w(yes no why) }
+
+    it 'yields every word previously added' do
+      yielded = container.map { |word| word }
+      expect(yielded).to eq %w(yes no why)
+    end
 
     it 'returns an enumerator when no block is given' do
       expect(container.each).to be_instance_of Enumerator

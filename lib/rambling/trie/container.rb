@@ -28,7 +28,7 @@ module Rambling
       # @see Nodes::Raw#add
       # @see Nodes::Compressed#add
       def add word
-        root.add char_symbols word
+        root.add reversed_char_symbols word
       end
 
       # Adds all provided words to the trie.
@@ -62,16 +62,27 @@ module Rambling
 
       # Checks if a path for a word or partial word exists in the trie.
       # @param [String] word the word or partial word to look for in the trie.
-      # @return [Boolean] +true+ if the word or partial word is found, +false+ otherwise.
+      # @return [Boolean] `true` if the word or partial word is found, `false` otherwise.
       # @see Nodes::Node#partial_word?
       def partial_word? word = ''
         root.partial_word? word.chars
       end
 
+      # Adds all provided words to the trie.
+      # @param [Array<String>] words the words to add the branch from.
+      # @return [Array<Nodes::Node>] the collection of nodes added.
+      # @raise [InvalidOperation] if the trie is already compressed.
+      # @see #concat
+      # @see Nodes::Raw#add
+      # @see Nodes::Compressed#add
+      def push *words
+        concat words
+      end
+
       # Checks if a whole word exists in the trie.
       # @param [String] word the word to look for in the trie.
-      # @return [Boolean] +true+ only if the word is found and the last character corresponds to a terminal node,
-      #   +false+ otherwise.
+      # @return [Boolean] `true` only if the word is found and the last character corresponds to a terminal node,
+      #   `false` otherwise.
       # @see Nodes::Node#word?
       def word? word = ''
         root.word? word.chars
@@ -87,7 +98,7 @@ module Rambling
 
       # Returns all words within a string that match a word contained in the trie.
       # @param [String] phrase the string to look for matching words in.
-      # @return [Enumerator<String>] all the words in the given string that match a word in the trie.
+      # @return [Array<String>] all the words in the given string that match a word in the trie.
       # @yield [String] each word found in phrase.
       def words_within phrase
         words_within_root(phrase).to_a
@@ -95,7 +106,7 @@ module Rambling
 
       # Checks if there are any valid words in a given string.
       # @param [String] phrase the string to look for matching words in.
-      # @return [Boolean] +true+ if any word within phrase is contained in the trie, +false+ otherwise.
+      # @return [Boolean] `true` if any word within phrase is contained in the trie, `false` otherwise.
       # @see Container#words_within
       def words_within? phrase
         words_within_root(phrase).any?
@@ -115,7 +126,7 @@ module Rambling
 
       # Compares two trie data structures.
       # @param [Container] other the trie to compare against.
-      # @return [Boolean] +true+ if the tries are equal, +false+ otherwise.
+      # @return [Boolean] `true` if the tries are equal, `false` otherwise.
       def == other
         root == other.root
       end
@@ -126,9 +137,7 @@ module Rambling
       def each
         return enum_for :each unless block_given?
 
-        root.each do |word|
-          yield word
-        end
+        root.each { |word| yield word }
       end
 
       # @return [String] a string representation of the container.
@@ -153,21 +162,21 @@ module Rambling
 
       # Root node's children tree.
       # @return [Hash<Symbol, Nodes::Node>] the children tree hash contained in the root node, consisting of
-      #   +:letter => node+.
+      #   `:letter => node`.
       # @see Nodes::Node#children_tree
       def children_tree
         root.children_tree
       end
 
       # Indicates if the root {Nodes::Node Node} can be compressed or not.
-      # @return [Boolean] +true+ for non-{Nodes::Node#terminal? terminal} nodes with one child, +false+ otherwise.
+      # @return [Boolean] `true` for non-{Nodes::Node#terminal? terminal} nodes with one child, `false` otherwise.
       def compressed?
         root.compressed?
       end
 
       # Array of words contained in the root {Nodes::Node Node}.
       # @return [Array<String>] all words contained in this trie.
-      # @see https://ruby-doc.org/core-2.7.0/Enumerable.html#method-i-to_a Enumerable#to_a
+      # @see https://ruby-doc.org/3.3.0/Enumerable.html#method-i-to_a Enumerable#to_a
       def to_a
         root.to_a
       end
@@ -202,22 +211,21 @@ module Rambling
         return enum_for :words_within_root, phrase unless block_given?
 
         chars = phrase.chars
-        0.upto(chars.length - 1).each do |starting_index|
-          new_phrase = chars.slice starting_index..(chars.length - 1)
-          root.match_prefix new_phrase do |word|
-            yield word
-          end
-        end
+        size = chars.length
+        # rubocop:disable Style/CommentedKeyword
+        0.upto(size - 1).each do |starting_index|
+          new_phrase = chars.slice starting_index, size # : Array[String]
+          root.match_prefix(new_phrase) { |word| yield word }
+        end # : Enumerator[String, void]
+        # rubocop:enable Style/CommentedKeyword
       end
 
       def compress_root
-        compressor.compress root
+        compressor.compress root # : Nodes::Compressed
       end
 
-      def char_symbols word
-        symbols = []
-        word.reverse.each_char { |c| symbols << c.to_sym }
-        symbols
+      def reversed_char_symbols word
+        word.reverse.chars.map(&:to_sym).to_a
       end
 
       def words_prefix_root phrase

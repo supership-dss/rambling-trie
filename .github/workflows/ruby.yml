@@ -3,10 +3,10 @@ name: build
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 permissions:
   contents: read
@@ -19,16 +19,31 @@ jobs:
       - name: Set up ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.3.0
+          ruby-version: 3.3.6
           bundler-cache: true
+      - name: Run rbs + steep
+        run: bundle exec rake steep
+      - name: Run reek
+        run: bundle exec rake reek
       - name: Run rubocop
-        run: bundle exec rubocop
+        run: bundle exec rake rubocop
+      - name: Run yardoc
+        run: bundle exec rake yard | grep '100.00% documented'
   spec:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ruby-version:
+          - 3.3.6
+          - 3.3.5
+          - 3.3.4
+          - 3.3.3
+          - 3.3.2
+          - 3.3.1
           - 3.3.0
+          - 3.2.6
+          - 3.2.5
+          - 3.2.4
           - 3.2.3
           - 3.2.2
           - 3.2.1
@@ -38,22 +53,6 @@ jobs:
           - 3.1.2
           - 3.1.1
           - 3.1.0
-          - 3.0.6
-          - 3.0.5
-          - 3.0.4
-          - 3.0.3
-          - 3.0.2
-          - 3.0.1
-          - 3.0.0
-          - 2.7.8
-          - 2.7.7
-          - 2.7.6
-          - 2.7.5
-          - 2.7.4
-          - 2.7.3
-          - 2.7.2
-          - 2.7.1
-          - 2.7.0
     steps:
       - uses: actions/checkout@v3
       - name: Set up ruby
@@ -62,7 +61,7 @@ jobs:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
       - name: Run rspec
-        run: bundle exec rspec
+        run: bundle exec rake spec
   coverage:
     runs-on: ubuntu-latest
     steps:
@@ -70,15 +69,15 @@ jobs:
       - name: Set up ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.3.0
+          ruby-version: 3.3.6
           bundler-cache: true
       - name: Report rspec test coverage to coveralls.io
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        run: bundle exec rspec
+        run: bundle exec rake spec
       - name: Report rspec test coverage to codeclimate.com
-        uses: paambaati/codeclimate-action@v4.0.0
+        uses: paambaati/codeclimate-action@v5.0.0
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
-          coverageCommand: bundle exec rspec
+          coverageCommand: bundle exec rake spec

@@ -3,9 +3,9 @@
 module Rambling
   module Trie
     module Serializers
-      # Zip file serializer. Dumps/loads contents from +.zip+ files.
-      # Automatically detects if zip file contains a +.marshal+ or +.yml+ file,
-      # or any other registered +:format => serializer+ combo.
+      # Zip file serializer. Dumps/loads contents from `.zip` files.
+      # Automatically detects if zip file contains a `.marshal` or `.yml` file,
+      # or any other registered `:format => serializer` combo.
       class Zip < Serializer
         # Creates a new Zip serializer.
         # @param [Configuration::Properties] properties the configuration
@@ -26,10 +26,15 @@ module Rambling
 
           ::Zip::File.open filepath do |zip|
             entry = zip.entries.first
-            entry_path = path entry.name
+            raise unless entry
+
+            entry_name = entry.name
+            entry_path = path entry_name
             entry.extract entry_path
 
-            serializer = serializers.resolve entry.name
+            serializer = serializers.resolve entry_name
+            raise unless serializer
+
             serializer.load entry_path
           end
         end
@@ -48,6 +53,9 @@ module Rambling
 
             entry_path = path filename
             serializer = serializers.resolve filename
+
+            raise unless serializer
+
             serializer.dump contents, entry_path
 
             zip.add filename, entry_path

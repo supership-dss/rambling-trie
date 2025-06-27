@@ -47,6 +47,9 @@ Style/CollectionMethods:
   StyleGuide: '#map-find-select-reduce-size'
   Enabled: false
 
+Style/ConcatArrayLiterals: # new in 1.41
+  Enabled: false
+
 Style/Copyright:
   Description: 'Include a copyright notice in each file before any code.'
   Enabled: false

@@ -1,5 +1,10 @@
+version: "2"
 exclude_patterns:
   - 'tasks/'
+checks:
+  method-complexity:
+    config:
+      threshold: 7
 plugins:
   # No to-dos or similar
   fixme:
@@ -10,13 +15,24 @@ plugins:
   flog:
     enabled: true
     config:
-      score_threshold: 25.0
+      score_threshold: 28.5
     exclude_patterns:
       - 'spec/'
   # Markdown lint with rules from https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md
   markdownlint:
     enabled: true
+  # Code smells
+  reek:
+    enabled: true
+    exclude_patterns:
+      - 'spec/'
   # Ruby lint
   rubocop:
     enabled: true
     channel: rubocop-1-50-2
+  # Semgrep Ruby rules
+  semgrep:
+    enabled: true
+    runs:
+      - configs:
+          - rules/ruby/lang

@@ -14,28 +14,22 @@ Gem::Specification.new do |gem|
 
   gem.summary = 'A Ruby implementation of the trie data structure.'
   gem.homepage = 'https://github.com/gonzedge/rambling-trie'
-  gem.date = Time.now.strftime '%Y-%m-%d'
   gem.metadata = {
-    'changelog_uri' => 'https://github.com/gonzedge/rambling-trie/blob/master/CHANGELOG.md',
+    'changelog_uri' => 'https://github.com/gonzedge/rambling-trie/blob/main/CHANGELOG.md',
     'documentation_uri' => 'https://www.rubydoc.info/gems/rambling-trie',
+    'rubygems_mfa_required' => 'true',
   }
 
   executables = `git ls-files -- bin/*`.split "\n"
-  files = `git ls-files -- {lib,*file,*.gemspec,LICENSE*,README*}`.split "\n"
-  test_files = `git ls-files -- {test,spec,features}/*`.split "\n"
+  files = `git ls-files -- {lib,sig,*file,*.gemspec,LICENSE*,README*}`.split "\n"
 
   gem.executables = executables.map { |f| File.basename f }
   gem.files = files
-  gem.test_files = test_files
   gem.require_paths = %w(lib)
 
   gem.name = 'rambling-trie'
   gem.license = 'MIT'
   gem.version = Rambling::Trie::VERSION
   gem.platform = Gem::Platform::RUBY
-  gem.required_ruby_version = '>= 2.6', '< 4'
-
-  gem.add_development_dependency 'rake', '~> 13.1'
-  gem.add_development_dependency 'rspec', '~> 3.12'
-  gem.add_development_dependency 'yard', '~> 0.9.34'
+  gem.required_ruby_version = '>= 3.1', '< 4'
 end

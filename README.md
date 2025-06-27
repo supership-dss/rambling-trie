@@ -21,7 +21,7 @@ and is designed to be very fast to traverse.
 
 You will need:
 
-* Ruby 2.7.0 or up
+* Ruby 3.1.0 or up
 * RubyGems
 
 See [RVM][rvm], [rbenv][rbenv] or [chruby][chruby] for more information on how to manage Ruby versions.
@@ -30,13 +30,13 @@ See [RVM][rvm], [rbenv][rbenv] or [chruby][chruby] for more information on how t
 
 You can either install it manually with:
 
-``` bash
+```shell
 gem install rambling-trie
 ```
 
 Or, include it in your `Gemfile` and bundle it:
 
-``` ruby
+```ruby
 gem 'rambling-trie'
 ```
 
@@ -46,13 +46,13 @@ gem 'rambling-trie'
 
 To create a new trie, initialize it like this:
 
-``` ruby
+```ruby
 trie = Rambling::Trie.create
 ```
 
 You can also provide a block and the created trie instance will be yielded for you to perform any operation on it:
 
-``` ruby
+```ruby
 Rambling::Trie.create do |trie|
   trie << 'word'
 end
@@ -61,13 +61,13 @@ end
 Additionally, you can provide the path to a file that contains all the words to be added to the trie, and it will read
 the file and create the complete structure for you, like this:
 
-``` ruby
+```ruby
 trie = Rambling::Trie.create '/path/to/file'
 ```
 
 By default, a plain text file with the following format will be expected:
 
-``` text
+```text
 some
 words
 to
@@ -85,20 +85,26 @@ readers.
 
 To add new words to the trie, use `#add` or its alias `#<<`:
 
-``` ruby
+```ruby
 trie.add 'word'
 trie << 'word'
 ```
 
-Or if you have multiple words to add, you can use `#concat`:
+Or if you have multiple words to add, you can use `#concat` or `#push`:
 
-``` ruby
+```ruby
 trie.concat %w(a collection of words)
+trie.push 'a', 'collection', 'of', 'words'
+
+# or
+words = %w(a collection of words)
+trie.concat words
+trie.push *words
 ```
 
 And to find out if a word already exists in the trie, use `#word?` or its alias `#include?`:
 
-``` ruby
+```ruby
 trie.word? 'word'
 trie.include? 'word'
 ```
@@ -106,21 +112,21 @@ trie.include? 'word'
 If you wish to find if part of a word exists in the trie instance, you should call `#partial_word?` or its
 alias `#match?`:
 
-``` ruby
+```ruby
 trie.partial_word? 'partial_word'
 trie.match? 'partial_word'
 ```
 
 To get all the words that start with a particular string, you can use `#scan` or its alias `#words`:
 
-``` ruby
+```ruby
 trie.scan 'hi' # => ['hi', 'high', 'highlight', ...]
 trie.words 'hi' # => ['hi', 'high', 'highlight', ...]
 ```
 
 To get all the words within a given string, you can use `#words_within`:
 
-``` ruby
+```ruby
 trie.words_within 'ifdxawesome45someword3' # => ['if', 'aw', 'awe', ...]
 trie.words_within 'tktktktk' # => []
 ```
@@ -128,7 +134,7 @@ trie.words_within 'tktktktk' # => []
 Or, if you're just interested in knowing whether a given string contains any valid words or not, you can
 use `#words_within?`:
 
-``` ruby
+```ruby
 trie.words_within? 'ifdxawesome45someword3' # => true
 trie.words_within? 'tktktktk' # => false
 ```
@@ -138,7 +144,7 @@ trie.words_within? 'tktktktk' # => false
 By default, the Rambling Trie works as a standard trie. Starting from version 0.1.0, you can obtain a compressed trie
 from the standard one, by using the compression feature. Just call the `#compress!` method on the trie instance:
 
-``` ruby
+```ruby
 trie.compress!
 ```
 
@@ -151,13 +157,13 @@ non-terminal nodes).
 
 If you want, you can also create a new compressed trie and leave the existing one intact. Just use `#compress` instead:
 
-``` ruby
+```ruby
 compressed_trie = trie.compress
 ```
 
 You can find out if a trie instance is compressed by calling the `#compressed?` method. From the `#compress` example:
 
-``` ruby
+```ruby
 trie.compressed? # => false
 compressed_trie.compressed? # => true
 ```
@@ -167,7 +173,7 @@ compressed_trie.compressed? # => true
 Starting from version 0.4.2, you can use any `Enumerable` method over a trie instance, and it will iterate over each
 word contained in the trie. You can now do things like:
 
-``` ruby
+```ruby
 trie.each { |word| puts word }
 trie.any? { |word| word.include? 'x' }
 trie.all? { |word| word.include? 'x' }
@@ -183,14 +189,14 @@ change with little frequency.
 
 To store a trie on disk, you can use `.dump` like this:
 
-``` ruby
+```ruby
 Rambling::Trie.dump trie, '/path/to/file'
 ```
 
 Then, when you need to use a trie next time, you don't have to create a new one with all the necessary words. Rather,
 you can retrieve a previously stored one with `.load` like this:
 
-``` ruby
+```ruby
 trie = Rambling::Trie.load '/path/to/file'
 ```
 
@@ -208,19 +214,19 @@ Currently, these formats are supported to store tries on disk:
 Optionally, you can use a `.zip` version of the supported formats. In order to do so, you'll have to install
 the [`rubyzip`][rubyzip] gem:
 
-``` bash
+```shell
 gem install rubyzip
 ```
 
 Or, include it in your `Gemfile` and bundle it:
 
-``` ruby
+```ruby
 gem 'rubyzip'
 ```
 
 Then, you can load contents form a `.zip` file like this:
 
-``` ruby
+```ruby
 require 'zip'
 trie = Rambling::Trie.load '/path/to/file.zip'
 ```
@@ -271,11 +277,11 @@ The Rambling Trie has been tested with the following Ruby versions:
 * 3.3.x
 * 3.2.x
 * 3.1.x
-* 3.0.x
-* 2.7.x
 
 **No longer supported**:
 
+* 3.0.x (EOL'ed)
+* 2.7.x (EOL'ed)
 * 2.6.x (EOL'ed)
 * 2.5.x (EOL'ed)
 * 2.4.x (EOL'ed)
@@ -310,7 +316,7 @@ WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEM
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-[badge_fury_badge]: https://badge.fury.io/rb/rambling-trie.svg?version=2.4.0
+[badge_fury_badge]: https://badge.fury.io/rb/rambling-trie.svg?version=2.5.1
 [badge_fury_link]: https://badge.fury.io/rb/rambling-trie
 [chruby]: https://github.com/postmodern/chruby
 [code_climate_grade_badge]: https://codeclimate.com/github/gonzedge/rambling-trie/badges/gpa.svg
@@ -327,17 +333,17 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 [github_action_codeql_badge]: https://github.com/gonzedge/rambling-trie/actions/workflows/codeql.yml/badge.svg
 [github_action_codeql_link]: https://github.com/gonzedge/rambling-trie/actions/workflows/codeql.yml
 [github_user_gonzedge]: https://github.com/gonzedge
-[inch_ci_badge]: https://inch-ci.org/github/gonzedge/rambling-trie.svg?branch=master
+[inch_ci_badge]: https://inch-ci.org/github/gonzedge/rambling-trie.svg?branch=main
 [license_badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license_link]: https://opensource.org/licenses/mit-license.php
-[marshal]: https://ruby-doc.org/core-2.7.0/Marshal.html
+[marshal]: https://ruby-doc.org/3.3.0/Marshal.html
 [rambling_trie_configuration]: https://github.com/gonzedge/rambling-trie#configuration
-[rambling_trie_contributing_guide]: https://github.com/gonzedge/rambling-trie/blob/master/CONTRIBUTING.md
-[rambling_trie_plain_text_reader]: https://github.com/gonzedge/rambling-trie/blob/master/lib/rambling/trie/readers/plain_text.rb
+[rambling_trie_contributing_guide]: https://github.com/gonzedge/rambling-trie/blob/main/CONTRIBUTING.md
+[rambling_trie_plain_text_reader]: https://github.com/gonzedge/rambling-trie/blob/main/lib/rambling/trie/readers/plain_text.rb
 [rbenv]: https://github.com/sstephenson/rbenv
 [rubydoc]: http://rubydoc.info/gems/rambling-trie
 [rubydoc_github]: http://rubydoc.info/github/gonzedge/rambling-trie
 [rubyzip]: https://github.com/rubyzip/rubyzip
 [rvm]: https://rvm.io
 [trie_wiki]: https://en.wikipedia.org/wiki/Trie
-[yaml]: https://ruby-doc.org/stdlib-2.7.0/libdoc/yaml/rdoc/YAML.html
+[yaml]: https://ruby-doc.org/3.3.0/stdlibs/yaml/YAML.html
