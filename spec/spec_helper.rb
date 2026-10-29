@@ -3,7 +3,7 @@
 require 'yaml'
 require 'simplecov'
 
-COVERAGE_FILTER = %r{/spec/}.freeze
+COVERAGE_FILTER = %r{/spec/}
 
 if ENV.key? 'COVERALLS_REPO_TOKEN'
   require 'coveralls'
@@ -20,7 +20,7 @@ end
 
 require 'rspec'
 require 'rambling-trie'
-::SPEC_ROOT = File.dirname __FILE__
+SPEC_ROOT = File.dirname __FILE__
 
 RSpec.configure do |config|
   config.color = true
@@ -33,10 +33,9 @@ end
 
 require 'support/config'
 
+shared_examples_path = File.join 'support', 'shared_examples'
 %w(
   a_compressible_trie a_serializable_trie a_serializer a_trie_data_structure
   a_trie_node a_trie_node_implementation a_container_scan a_container_word
   a_container_partial_word a_container_words_within
-).each do |name|
-  require File.join('support', 'shared_examples', name)
-end
+).each { |name| require File.join(shared_examples_path, name) }

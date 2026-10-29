@@ -2,16 +2,13 @@
 
 module Rambling
   module Trie
-    # Provides the +String+ representation behavior for the trie data structure.
+    # Provides the `String` representation behavior for the trie data structure.
     module Stringifyable
       # String representation of the current node, if it is a terminal node.
       # @return [String] the string representation of the current node.
-      # @raise [InvalidOperation] if node is not terminal or is root.
+      # @raise [InvalidOperation] if the node has a letter and is not terminal.
       def as_word
-        if letter && !terminal?
-          raise Rambling::Trie::InvalidOperation,
-            'Cannot represent branch as a word'
-        end
+        raise Rambling::Trie::InvalidOperation, 'Cannot represent branch as a word' if letter && !terminal?
 
         to_s
       end

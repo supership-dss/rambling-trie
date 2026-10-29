@@ -15,16 +15,20 @@ module Rambling
           expect(node.each).to be_an Enumerator
         end
 
+        it 'iterates through all words contained in the trie' do
+          expect(node.each.to_a).to match_array words
+        end
+
         it 'has the same word count as the trie' do
           expect(node.count).to eq words.count
         end
 
-        it 'includes every word contained in the trie' do
+        it 'yields every word contained in the trie' do
           node.each { |word| expect(words).to include word }
         end
 
         it 'returns the enumerable when a block is given' do
-          expect(node.each { |_| }).to eq node
+          expect(node.each(&:to_s)).to eq node
         end
       end
 
@@ -44,6 +48,17 @@ module Rambling
 
       it 'includes #to_a from the core Enumerable module' do
         expect(node.to_a).to match_array words
+      end
+
+      describe '#empty_enumerator' do
+        it 'returns independent objects for each empty match result' do
+          # rubocop:disable Lint/EmptyBlock
+          first  = node.empty_enum {}
+          second = node.empty_enum {}
+          # rubocop:enable Lint/EmptyBlock
+
+          expect(first).not_to be second
+        end
       end
     end
   end

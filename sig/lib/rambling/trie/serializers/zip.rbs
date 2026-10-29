@@ -1,0 +1,23 @@
+module Rambling
+  module Trie
+    module Serializers
+      class Zip[TValue < BasicObject & _Inspect & _Nilable] < Serializer[Nodes::Node[TValue]]
+        @properties: Configuration::Properties[TValue]
+
+        def initialize: (Configuration::Properties[TValue]) -> void
+
+        private
+
+        attr_reader properties: Configuration::Properties[TValue]
+
+        def serializers: -> Configuration::ProviderCollection[Serializer[Nodes::Node[TValue]]]
+
+        def tmp_path: -> String
+
+        def path_with_random_prefix: (String) -> String
+
+        def clean_up_tmp_files: [T] { (Array[String]) -> T } -> T
+      end
+    end
+  end
+end

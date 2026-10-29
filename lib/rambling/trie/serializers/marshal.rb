@@ -3,7 +3,7 @@
 module Rambling
   module Trie
     module Serializers
-      # Serializer for Ruby marshal format (+.marshal+) files.
+      # Serializer for Ruby marshal format (`.marshal`) files.
       class Marshal < Serializer
         # Creates a new Marshal serializer.
         # @param [Serializer] serializer the serializer responsible to write to and read from disk.
@@ -15,10 +15,15 @@ module Rambling
         # Loads marshaled object from contents in filepath and deserializes it into a {Nodes::Node Node}.
         # @param [String] filepath the full path of the file to load the marshaled object from.
         # @return [Nodes::Node] The deserialized {Nodes::Node Node}.
-        # @see https://ruby-doc.org/core-2.7.0/Marshal.html#method-c-load Marshal.load
-        # @note Use of {https://ruby-doc.org/core-2.7.0/Marshal.html#method-c-load Marshal.load} is generally
+        # @see https://ruby-doc.org/3.3.0/Marshal.html#method-c-load Marshal.load
+        # @note Use of {https://ruby-doc.org/3.3.0/Marshal.html#method-c-load Marshal.load} is generally
         #   discouraged. Only use this with trusted input.
         def load filepath
+          warn <<~WARN.chomp.tr("\n", ' ')
+            WARNING: Marshal.load is being used to deserialize trie data.
+            Loading untrusted input via Marshal.load can execute arbitrary code.
+            Only load Marshal data from trusted sources.
+          WARN
           ::Marshal.load serializer.load filepath
         end
 
@@ -26,7 +31,7 @@ module Rambling
         # @param [Nodes::Node] node the node to serialize
         # @param [String] filepath the full path of the file to dump the marshaled object into.
         # @return [Numeric] number of bytes written to disk.
-        # @see https://ruby-doc.org/core-2.7.0/Marshal.html#method-c-dump Marshal.dump
+        # @see https://ruby-doc.org/3.3.0/Marshal.html#method-c-dump Marshal.dump
         def dump node, filepath
           serializer.dump ::Marshal.dump(node), filepath
         end

@@ -1,0 +1,24 @@
+module Rambling
+  module Trie
+    module Enumerable[TValue < BasicObject & _Inspect & _Nilable]
+      include ::Enumerable[String]
+
+      alias size count
+
+      def each: { (String) -> void } -> Enumerable[TValue]
+                | -> Enumerator[String, void]
+
+      private
+
+      # abstract methods
+
+      def as_word: -> String
+
+      def empty_enum: -> Enumerator[String, void]
+
+      def terminal?: -> bool
+
+      def children_tree: -> Hash[Symbol, Nodes::Node[TValue]]
+    end
+  end
+end

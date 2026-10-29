@@ -17,7 +17,6 @@ module Rambling
         #   providers.
         #   @param [TProvider] provider the provider to use as default.
         #   @raise [ArgumentError] when the given provider is not in the provider collection.
-        #   @note If no providers have been configured, +nil+ will be assigned.
         # @return [TProvider, nil] the default provider to use when a provider cannot be resolved in
         #   {ProviderCollection#resolve #resolve}.
         attr_reader :default
@@ -25,7 +24,8 @@ module Rambling
         # Creates a new provider collection.
         # @param [Symbol] name the name for this provider collection.
         # @param [Hash<Symbol, TProvider>] providers the configured providers.
-        # @param [TProvider, nil] default the configured default provider.
+        # @param [TProvider, nil] default the configured default provider. When +nil+ (or no providers
+        #   are given), falls back to the first configured provider, or +nil+ if none exist.
         def initialize name, providers = {}, default = nil
           @name = name
           @configured_providers = providers
@@ -58,20 +58,25 @@ module Rambling
         # @param [String] filepath the filepath to resolve into a provider.
         # @return [TProvider, nil] the provider for the given file's extension. {#default} if not found.
         def resolve filepath
-          providers[file_format filepath] || default
+          extension = file_format filepath
+          if providers.key? extension
+            providers[extension]
+          else
+            default
+          end
         end
 
         # Resets the provider collection to the initial values.
         # @return [void]
         def reset
           providers.clear
-          configured_providers.each { |k, v| self[k] = v }
+          configured_providers.each { |extension, provider| self[extension] = provider }
           self.default = configured_default
         end
 
-        # Get provider corresponding to a given format.
-        # @return [Array<Symbol>] the provider corresponding to that format.
-        # @see https://ruby-doc.org/core-2.7.0/Hash.html#method-i-5B-5D
+        # List the formats of configured providers.
+        # @return [Array<Symbol>] the formats of all configured providers.
+        # @see https://ruby-doc.org/3.3.0/Hash.html#method-i-keys
         #   Hash#keys
         def formats
           providers.keys
@@ -79,8 +84,8 @@ module Rambling
 
         # Get provider corresponding to a given format.
         # @param [Symbol] format the format to search for in the collection.
-        # @return [TProvider] the provider corresponding to that format.
-        # @see https://ruby-doc.org/core-2.7.0/Hash.html#method-i-5B-5D Hash#[]
+        # @return [TProvider, nil] the provider corresponding to that format, or +nil+ if not found.
+        # @see https://ruby-doc.org/3.3.0/Hash.html#method-i-5B-5D Hash#[]
         def [] format
           providers[format]
         end
@@ -98,13 +103,13 @@ module Rambling
         end
 
         def file_format filepath
-          format = File.extname filepath
-          format.slice! 0
-          format.to_sym
+          File.extname(filepath).sub(%r{^\.}, '').to_sym
         end
 
         def contains? provider
-          provider.nil? || (providers.any? && provider_instances.include?(provider))
+          return true if provider.nil?
+
+          provider_instances.include?(provider || raise)
         end
 
         alias_method :provider_instances, :values

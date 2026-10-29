@@ -34,6 +34,17 @@ describe Rambling::Trie::Container do
       expect(root.children.size).to eq 1
       expect(root.to_a).to eq %w(hello)
     end
+
+    it 'does nothing with empty strings' do
+      add_word container, ''
+      expect(root.children.size).to eq 0
+      expect(root.to_a).to be_empty
+    end
+
+    it 'stores given arbitrary value in terminal node' do
+      add_word container, 'hi', 5
+      expect(root[:h][:i].value).to eq 5
+    end
     # rubocop:enable RSpec/MultipleExpectations
   end
 
@@ -52,7 +63,23 @@ describe Rambling::Trie::Container do
       expect(nodes.first.letter).to eq :o
       expect(nodes.last.letter).to eq :w
     end
+
+    it 'stores arbitrary values in the terminal nodes' do
+      container.concat %w(other words), [10, 20]
+      expect(root[:o][:t][:h][:e][:r].value).to eq 10
+      expect(root[:w][:o][:r][:d][:s].value).to eq 20
+    end
     # rubocop:enable RSpec/MultipleExpectations
+
+    it 'raises ArgumentError when words and values have different lengths' do
+      expect { container.concat %w(one two three), [1, 2] }
+        .to raise_error ArgumentError, %r{words and values must have the same size}
+    end
+
+    it 'raises ArgumentError when values is longer than words' do
+      expect { container.concat %w(one), [1, 2, 3] }
+        .to raise_error ArgumentError, %r{words and values must have the same size}
+    end
   end
 
   describe '#compress' do
@@ -91,11 +118,26 @@ describe Rambling::Trie::Container do
       expect(compressor).to have_received(:compress).twice
     end
 
-    it 'cannot compress the result' do
-      new_container = container.compress
-      new_container.compress
+    context 'when already compressed' do
+      let(:compressed_container) { container.compress }
 
-      expect(compressor).to have_received(:compress).once
+      it 'emits a deprecation warning' do
+        expect { compressed_container.compress }.to output(%r{deprecated}i).to_stderr
+      end
+
+      it 'returns a new container' do
+        expect(compressed_container.compress).not_to equal compressed_container
+      end
+
+      it 'returns a container with the same root' do
+        expect(compressed_container.compress.root).to equal compressed_container.root
+      end
+
+      it 'does not compress again' do
+        compressed_container.compress
+
+        expect(compressor).to have_received(:compress).once
+      end
     end
   end
 
@@ -169,34 +211,22 @@ describe Rambling::Trie::Container do
     end
   end
 
-  describe '#word?' do
-    it_behaves_like 'a propagating node' do
-      let(:method_name) { :word? }
+  describe '#push' do
+    # rubocop:disable RSpec/MultipleExpectations
+    it 'adds all the words to the root node' do
+      container.push 'other', 'words'
+
+      expect(root.children.size).to eq 2
+      expect(root.to_a).to eq %w(other words)
     end
 
-    context 'when word is contained' do
-      before { add_words container, %w(hello high) }
+    it 'returns all the corresponding nodes' do
+      nodes = container.push 'other', 'words'
 
-      it_behaves_like 'a matching container#word'
-
-      context 'with compressed root' do
-        before { container.compress! }
-
-        it_behaves_like 'a matching container#word'
-      end
+      expect(nodes.first.letter).to eq :o
+      expect(nodes.last.letter).to eq :w
     end
-
-    context 'when word is not contained' do
-      before { add_word container, 'hello' }
-
-      it_behaves_like 'a non-matching container#word'
-
-      context 'with compressed root' do
-        before { container.compress! }
-
-        it_behaves_like 'a non-matching container#word'
-      end
-    end
+    # rubocop:enable RSpec/MultipleExpectations
   end
 
   describe '#partial_word?' do
@@ -231,6 +261,36 @@ describe Rambling::Trie::Container do
     end
   end
 
+  describe '#word?' do
+    it_behaves_like 'a propagating node' do
+      let(:method_name) { :word? }
+    end
+
+    context 'when word is contained' do
+      before { add_words container, %w(hello high) }
+
+      it_behaves_like 'a matching container#word'
+
+      context 'with compressed root' do
+        before { container.compress! }
+
+        it_behaves_like 'a matching container#word'
+      end
+    end
+
+    context 'when word is not contained' do
+      before { add_word container, 'hello' }
+
+      it_behaves_like 'a non-matching container#word'
+
+      context 'with compressed root' do
+        before { container.compress! }
+
+        it_behaves_like 'a non-matching container#word'
+      end
+    end
+  end
+
   describe '#scan' do
     context 'when words that match are contained' do
       before do
@@ -261,6 +321,26 @@ describe Rambling::Trie::Container do
         end
       end
     end
+
+    context 'when query shares only first char with a contained same-length word' do
+      before { add_words container, %w(hello world) }
+
+      # rubocop:disable RSpec/MultipleExpectations
+      it 'returns an empty array for a diverging same-length query' do
+        expect(container.scan 'hallo').to eq %w()
+        expect(container.scan 'wolld').to eq %w()
+      end
+
+      context 'with compressed root' do
+        before { container.compress! }
+
+        it 'returns an empty array for a diverging same-length query after compression' do
+          expect(container.scan 'hallo').to eq %w()
+          expect(container.scan 'wolld').to eq %w()
+        end
+      end
+      # rubocop:enable RSpec/MultipleExpectations
+    end
   end
 
   describe '#words_within' do
@@ -268,14 +348,14 @@ describe Rambling::Trie::Container do
 
     context 'when phrase does not contain any words' do
       it 'returns an empty array' do
-        expect(container.words_within 'xyz').to match_array []
+        expect(container.words_within 'xyz').to be_empty
       end
 
       context 'with compressed node' do
         before { container.compress! }
 
         it 'returns an empty array' do
-          expect(container.words_within 'xyz').to match_array []
+          expect(container.words_within 'xyz').to be_empty
         end
       end
     end
@@ -373,12 +453,24 @@ describe Rambling::Trie::Container do
   describe '#each' do
     before { add_words container, %w(yes no why) }
 
-    it 'returns an enumerator when no block is given' do
-      expect(container.each).to be_instance_of Enumerator
+    it 'yields every word previously added' do
+      yielded = container.map { |word| word }
+      expect(yielded).to eq %w(yes no why)
     end
 
-    it 'iterates through all words contained' do
-      expect(container.each.to_a).to eq %w(yes no why)
+    it 'returns self' do
+      result = container.each { |word| word }
+      expect(result).to be container
+    end
+
+    context 'when no block is given' do
+      it 'returns an enumerator when no block is given' do
+        expect(container.each).to be_instance_of Enumerator
+      end
+
+      it 'iterates through all words contained' do
+        expect(container.each.to_a).to eq %w(yes no why)
+      end
     end
   end
 
@@ -391,6 +483,18 @@ describe Rambling::Trie::Container do
         terminal: nil,
         children: [:a, :f, :w, :h]>>
       CONTAINER
+    end
+  end
+
+  describe '#size' do
+    before { add_words container, %w(hello high) }
+
+    it 'returns the number of words in the trie' do
+      expect(container.size).to eq 2
+    end
+
+    it 'does not return the number of letters in the root children tree' do
+      expect(container.size).not_to eq root.children_tree.size
     end
   end
 
@@ -433,7 +537,7 @@ describe Rambling::Trie::Container do
 
     it 'aliases `#<<` to `#add`' do
       container << 'words'
-      expect(root).to have_received(:add).with %i(s d r o w)
+      expect(root).to have_received(:add).with %i(s d r o w), nil
     end
 
     it 'delegates `#[]` to the root node' do

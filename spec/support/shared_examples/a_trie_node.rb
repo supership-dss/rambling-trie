@@ -16,13 +16,20 @@ shared_examples_for 'a trie node' do
       expect(node).not_to be_terminal
     end
 
+    it 'has no first_child' do
+      expect(node.first_child).to be_nil
+    end
+
+    it 'has no value' do
+      expect(node.value).to be_nil
+    end
+
     it 'returns empty string as its word' do
       expect(node.as_word).to be_empty
     end
 
     context 'with a letter and a parent' do
       let(:parent) { node_class.new }
-      # noinspection RubyArgCount
       let(:node_with_parent) { node_class.new :a, parent }
 
       it 'does not have any letter' do
@@ -35,6 +42,10 @@ shared_examples_for 'a trie node' do
 
       it 'is not terminal' do
         expect(node_with_parent).not_to be_terminal
+      end
+
+      it 'has no first_child' do
+        expect(node.first_child).to be_nil
       end
     end
   end
@@ -71,10 +82,17 @@ shared_examples_for 'a trie node' do
     end
   end
 
+  describe '#value=' do
+    it 'assigns the given value to the node' do
+      node.value = 42
+      expect(node.value).to eq 42
+    end
+  end
+
   describe 'delegates and aliases' do
     let :children_tree do
       instance_double(
-        'Hash',
+        Hash,
         :children_tree,
         :[] => 'value',
         :[]= => nil,
@@ -118,8 +136,8 @@ shared_examples_for 'a trie node' do
     # rubocop:disable RSpec/ExampleLength
     it 'delegates `#children` to its children tree values' do
       children = [
-        instance_double('Rambling::Trie::Nodes::Node', :child_one),
-        instance_double('Rambling::Trie::Nodes::Node', :child_two),
+        instance_double(Rambling::Trie::Nodes::Node, :child_one),
+        instance_double(Rambling::Trie::Nodes::Node, :child_two),
       ]
       allow(children_tree).to receive(:values).and_return children
 

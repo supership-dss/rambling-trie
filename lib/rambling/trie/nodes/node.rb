@@ -4,7 +4,10 @@ module Rambling
   module Trie
     module Nodes
       # A representation of a node in the trie data structure.
+      # :reek:MissingSafeMethod { exclude: [ terminal! ] }
+      # :reek:RepeatedConditional { max_ifs: 3 }
       class Node
+        include NotImplemented
         include Rambling::Trie::Compressible
         include Rambling::Trie::Enumerable
         include Rambling::Trie::Comparable
@@ -22,20 +25,27 @@ module Rambling
         attr_reader :letter
 
         # Child nodes tree.
-        # @return [Hash<Symbol, Node>] the children tree hash, consisting of +:letter => node+.
+        # @return [Hash<Symbol, Node>] the children tree hash, consisting of `:letter => node`.
         attr_accessor :children_tree
 
         # Parent node.
         # @return [Node, nil] the parent of the current node.
         attr_accessor :parent
 
+        # Arbitrary value stored in this node
+        # @return [TValue, nil] the value stored in this node.
+        attr_accessor :value
+
         # Creates a new node.
         # @param [Symbol, nil] letter the Node's letter value.
         # @param [Node, nil] parent the parent of the current node.
-        def initialize letter = nil, parent = nil, children_tree = {}
+        # @param [Hash<Symbol, Node>, nil] children_tree the children tree of the current node,
+        #   or +nil+ to start with an empty tree. When a hash is provided, ownership transfers
+        #   to the node; callers must not retain references to or mutate the hash after passing it.
+        def initialize letter = nil, parent = nil, children_tree = nil
           @letter = letter
           @parent = parent
-          @children_tree = children_tree
+          @children_tree = children_tree || {}
         end
 
         # Child nodes.
@@ -47,21 +57,17 @@ module Rambling
         # First child node.
         # @return [Node, nil] the first child contained in the current node.
         def first_child
-          return if children_tree.empty?
-
-          # rubocop:disable Lint/UnreachableLoop
-          children_tree.each_value { |child| return child }
-          # rubocop:enable Lint/UnreachableLoop
+          children_tree.each_value.first
         end
 
         # Indicates if the current node is the root node.
-        # @return [Boolean] +true+ if the node does not have a parent, +false+ otherwise.
+        # @return [Boolean] `true` if the node does not have a parent, `false` otherwise.
         def root?
           !parent
         end
 
         # Indicates if a {Node Node} is terminal or not.
-        # @return [Boolean] +true+ for terminal nodes, +false+ otherwise.
+        # @return [Boolean] `true` for terminal nodes, `false` otherwise.
         def terminal?
           !!terminal
         end
@@ -79,7 +85,7 @@ module Rambling
 
         # Checks if a path for a set of characters exists in the trie.
         # @param [Array<String>] chars the characters to look for in the trie.
-        # @return [Boolean] +true+ if the characters are found, +false+ otherwise.
+        # @return [Boolean] `true` if the characters are found, `false` otherwise.
         def partial_word? chars
           return true if chars.empty?
 
@@ -88,7 +94,7 @@ module Rambling
 
         # Checks if a path for set of characters represents a word in the trie.
         # @param [Array<String>] chars the characters to look for in the trie.
-        # @return [Boolean] +true+ if the characters are found and form a word, +false+ otherwise.
+        # @return [Boolean] `true` if the characters are found and form a word, `false` otherwise.
         def word? chars = []
           return terminal? if chars.empty?
 
@@ -106,7 +112,7 @@ module Rambling
         end
 
         # Returns all words that match a prefix of any length within chars.
-        # @param [String] chars the chars to base the prefix on.
+        # @param [Array[String]] chars the chars to base the prefix on.
         # @return [Enumerator<String>] all the words that match a prefix by chars.
         # @yield [String] each word found.
         def match_prefix chars
@@ -122,24 +128,24 @@ module Rambling
         # Get {Node Node} corresponding to a given letter.
         # @param [Symbol] letter the letter to search for in the node.
         # @return [Node] the node corresponding to that letter.
-        # @see https://ruby-doc.org/core-2.7.0/Hash.html#method-i-5B-5D Hash#[]
+        # @see https://ruby-doc.org/3.3.0/Hash.html#method-i-5B-5D Hash#[]
         def [] letter
           children_tree[letter]
         end
 
         # Set the {Node Node} that corresponds to a given letter.
-        # @param [Symbol] letter the letter to insert or update in the node's
+        # @param [Symbol] letter the letter to insert or update in the node's children tree.
         # @param [Node] node the {Node Node} to assign to that letter.
         # @return [Node] the node corresponding to the inserted or updated letter.
-        # @see https://ruby-doc.org/core-2.7.0/Hash.html#method-i-5B-5D Hash#[]
+        # @see https://ruby-doc.org/3.3.0/Hash.html#method-i-5B-5D Hash#[]
         def []= letter, node
           children_tree[letter] = node
         end
 
         # Check if a {Node Node}'s children tree contains a given letter.
         # @param [Symbol] letter the letter to search for in the node.
-        # @return [Boolean] +true+ if the letter is present, +false+ otherwise.
-        # @see https://ruby-doc.org/core-2.7.0/Hash.html#method-i-has_key-3F Hash#key?
+        # @return [Boolean] `true` if the letter is present, `false` otherwise.
+        # @see https://ruby-doc.org/3.3.0/Hash.html#method-i-has_key-3F Hash#key?
         def key? letter
           children_tree.key? letter
         end
@@ -147,8 +153,8 @@ module Rambling
         # Delete a given letter and its corresponding {Node Node} from
         # this {Node Node}'s children tree.
         # @param [Symbol] letter the letter to delete from the node's children tree.
-        # @return [Node] the node corresponding to the deleted letter.
-        # @see https://ruby-doc.org/core-2.7.0/Hash.html#method-i-delete Hash#delete
+        # @return [Node, nil] the node corresponding to the deleted letter.
+        # @see https://ruby-doc.org/3.3.0/Hash.html#method-i-delete Hash#delete
         def delete letter
           children_tree.delete letter
         end
@@ -164,6 +170,30 @@ module Rambling
         private
 
         attr_accessor :terminal
+
+        # @abstract Subclass and override {#children_match_prefix} to match a prefix against child nodes.
+        # @raise [NotImplementedError] when not overridden by a subclass
+        def children_match_prefix _chars
+          not_implemented
+        end
+
+        # @abstract Subclass and override {#partial_word_chars?} to check for a partial-word path.
+        # @raise [NotImplementedError] when not overridden by a subclass
+        def partial_word_chars? _chars
+          not_implemented
+        end
+
+        # @abstract Subclass and override {#word_chars?} to check for a full-word path.
+        # @raise [NotImplementedError] when not overridden by a subclass
+        def word_chars? _chars
+          not_implemented
+        end
+
+        # @abstract Subclass and override {#closest_node} to return the deepest matching node.
+        # @raise [NotImplementedError] when not overridden by a subclass
+        def closest_node _chars
+          not_implemented
+        end
       end
     end
   end

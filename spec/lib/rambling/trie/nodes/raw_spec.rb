@@ -32,6 +32,26 @@ describe Rambling::Trie::Nodes::Raw do
   end
 
   describe '#add' do
+    context 'when the node has no parent' do
+      before { node.parent = nil }
+
+      context 'when adding an empty string' do
+        before { add_word node, '' }
+
+        it 'does not add new children' do
+          expect(node.children.size).to eq 0
+        end
+
+        it 'does not mark itself as terminal' do
+          expect(node).not_to be_terminal
+        end
+
+        it 'returns the node' do
+          expect(add_word(node, '')).to eq node
+        end
+      end
+    end
+
     context 'when the node has no branches' do
       before { add_word node, 'abc' }
 
@@ -126,6 +146,10 @@ describe Rambling::Trie::Nodes::Raw do
 
         it 'changes the node to terminal' do
           expect(node).to be_terminal
+        end
+
+        it 'returns the node' do
+          expect(add_word(node, '')).to eq node
         end
       end
 

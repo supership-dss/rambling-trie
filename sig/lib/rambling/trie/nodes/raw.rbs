@@ -1,0 +1,27 @@
+module Rambling
+  module Trie
+    module Nodes
+      class Raw[TValue < BasicObject & _Inspect & _Nilable] < Node[TValue]
+        def add: (Array[Symbol], ?TValue?) -> Node[TValue]
+
+        def compressed?: -> bool
+
+        private
+
+        def add_to_children_tree: (Array[Symbol], ?TValue?) -> Node[TValue]
+
+        def new_node: (Symbol) -> Node[TValue]
+
+        # overrides
+
+        def children_match_prefix: (Array[String]) { (String) -> void } -> Enumerator[String, void]
+
+        def partial_word_chars?: (Array[String]) -> bool
+
+        def word_chars?: (Array[String]) -> bool
+
+        def closest_node: (Array[String]) -> Node[TValue]
+      end
+    end
+  end
+end
