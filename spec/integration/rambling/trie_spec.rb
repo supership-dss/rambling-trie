@@ -4,10 +4,10 @@ require 'spec_helper'
 require 'zip'
 
 describe Rambling::Trie do
-  let(:assets_path) { File.join ::SPEC_ROOT, 'assets' }
+  let(:assets_path) { File.join SPEC_ROOT, 'assets' }
 
   describe '::VERSION' do
-    let(:root_path) { File.join ::SPEC_ROOT, '..' }
+    let(:root_path) { File.join SPEC_ROOT, '..' }
     let(:readme_path) { File.join root_path, 'README.md' }
     let(:readme) { File.read readme_path }
     let(:changelog_path) { File.join root_path, 'CHANGELOG.md' }
@@ -27,9 +27,10 @@ describe Rambling::Trie do
     end
 
     it 'is the version before the one at the top of the CHANGELOG' do
-      changelog_version = Gem::Version.new changelog_versions.first
-      lib_version = Gem::Version.new "#{Rambling::Trie::VERSION}.0"
-      expect(changelog_version).to eq lib_version.bump
+      top_changelog_version = Gem::Version.new changelog_versions.first
+      minor_version = Rambling::Trie::VERSION.split('.')[..1].join('.') # 1.2.3 => 1.2
+      next_versions = ["#{Rambling::Trie::VERSION}.0", Rambling::Trie::VERSION, minor_version]
+      expect(next_versions.map { |v| Gem::Version.new(v).bump }).to include top_changelog_version
     end
 
     it 'is included in the CHANGELOG diffs' do
@@ -94,17 +95,17 @@ describe Rambling::Trie do
     end
 
     context 'when serialized with zipped Ruby marshal format' do
-      let!(:original_on_exists_proc) { ::Zip.on_exists_proc }
-      let!(:original_continue_on_exists_proc) { ::Zip.continue_on_exists_proc }
+      let!(:original_on_exists_proc) { Zip.on_exists_proc }
+      let!(:original_continue_on_exists_proc) { Zip.continue_on_exists_proc }
 
       before do
-        ::Zip.on_exists_proc = true
-        ::Zip.continue_on_exists_proc = true
+        Zip.on_exists_proc = true
+        Zip.continue_on_exists_proc = true
       end
 
       after do
-        ::Zip.on_exists_proc = original_on_exists_proc
-        ::Zip.continue_on_exists_proc = original_continue_on_exists_proc
+        Zip.on_exists_proc = original_on_exists_proc
+        Zip.continue_on_exists_proc = original_continue_on_exists_proc
       end
 
       it_behaves_like 'a serializable trie' do

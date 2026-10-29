@@ -1,18 +1,20 @@
 # frozen_string_literal: true
 
+path = File.join 'rambling', 'trie'
 %w(
-  comparable compressible compressor configuration container enumerable inspectable invalid_operation
+  comparable compressible compressor configuration container enumerable inspectable invalid_operation not_implemented
   readers serializers stringifyable nodes version
-).each do |file|
-  require File.join('rambling', 'trie', file)
-end
+).each { |file| require File.join(path, file) }
 
 # General namespace for all Rambling gems.
 module Rambling
-  # Entry point for +rambling-trie+ API.
+  # Entry point for `rambling-trie` API.
   module Trie
+    PROPERTIES_MUTEX = Mutex.new
+    private_constant :PROPERTIES_MUTEX
+
     class << self
-      # Creates a new +Rambling::Trie+. Entry point for the +rambling-trie+ API.
+      # Creates a new `Rambling::Trie`. Entry point for the `rambling-trie` API.
       # @param [String, nil] filepath the file to load the words from.
       # @param [Readers::Reader, nil] reader the file parser to get each word.
       # @return [Container] the trie just created.
@@ -22,41 +24,37 @@ module Rambling
         root = root_builder.call
 
         Rambling::Trie::Container.new root, compressor do |container|
-          # noinspection RubyMismatchedArgumentType
           if filepath
-            reader ||= readers.resolve filepath
-            # noinspection RubyMismatchedArgumentType,RubyNilAnalysis
-            reader.each_word filepath do |word|
-              container << word
-            end
+            input_reader = reader || readers.resolve(filepath) || raise(ArgumentError, "no reader for #{filepath}")
+            input_reader.each_word(filepath) { |word| container << word }
           end
 
-          yield container if block_given?
+          yield container if block_given? # steep:ignore
         end
       end
 
       # Loads an existing trie from disk into memory. By default, it will
       # deduce the correct way to deserialize based on the file extension.
-      # Available formats are +yml+, +marshal+, and +zip+ versions of all the
+      # Available formats are `yml`, `marshal`, and `zip` versions of all the
       # previous formats. You can also define your own.
       # @param [String] filepath the file to load the words from.
-      # @param [Serializer, nil] serializer the object responsible of loading the trie from disk.
+      # @param [Serializer, nil] serializer the object responsible for loading the trie from disk.
       # @return [Container] the trie just loaded.
       # @yield [Container] the trie just loaded.
       # @see Rambling::Trie::Serializers Serializers.
-      # @note Use of #   {https://ruby-doc.org/core-2.7.0/Marshal.html#method-c-load Marshal.load} is generally
-      #   discouraged. Only use the +.marshal+ format with trusted input.
+      # @note Use of #   {https://ruby-doc.org/3.3.0/Marshal.html#method-c-load Marshal.load} is generally
+      #   discouraged. Only use the `.marshal` format with trusted input.
       def load filepath, serializer = nil
         serializer ||= serializers.resolve filepath
-        root = serializer.load filepath
+        root = (serializer || raise).load filepath
         Rambling::Trie::Container.new root, compressor do |container|
-          yield container if block_given?
+          yield container if block_given? # steep:ignore
         end
       end
 
       # Dumps an existing trie from memory into disk. By default, it will
       # deduce the correct way to serialize based on the file extension.
-      # Available formats are +yml+, +marshal+, and +zip+ versions of all the
+      # Available formats are `yml`, `marshal`, and `zip` versions of all the
       # previous formats. You can also define your own.
       # @param [Container] trie the trie to dump into disk.
       # @param [String] filepath the file to dump to serialized trie into.
@@ -65,11 +63,10 @@ module Rambling
       # @see Serializers Serializers.
       def dump trie, filepath, serializer = nil
         serializer ||= serializers.resolve filepath
-        # noinspection RubyNilAnalysis
-        serializer.dump trie.root, filepath
+        (serializer || raise).dump trie.root, filepath
       end
 
-      # Provides configuration properties for the +Rambling::Trie+ gem.
+      # Provides configuration properties for the `Rambling::Trie` gem.
       # @return [Configuration::Properties] the configured properties of the gem.
       # @yield [Configuration::Properties] the configured properties of the gem.
       def config
@@ -80,7 +77,11 @@ module Rambling
       private
 
       def properties
-        @properties ||= Rambling::Trie::Configuration::Properties.new
+        return @properties if @properties
+
+        PROPERTIES_MUTEX.synchronize do
+          @properties ||= Rambling::Trie::Configuration::Properties.new
+        end
       end
 
       def readers

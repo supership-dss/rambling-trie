@@ -1,0 +1,27 @@
+module Rambling
+  module Trie
+    module Nodes
+      class Compressed[TValue < BasicObject & _Inspect & _Nilable] < Node[TValue]
+        def initialize: (?Symbol?, ?Node[TValue]?, ?Hash[Symbol, Node[TValue]]) -> void
+
+        def add: (Array[Symbol], ?TValue?) -> Node[TValue]
+
+        def compressed?: -> bool
+
+        private
+
+        # overrides
+
+        def children_match_prefix: (Array[String]) { (String) -> void } -> Enumerator[String, void]
+
+        def match_child_prefix: (Node[TValue], Array[String]) { (String) -> void } -> Enumerator[String, void]
+
+        def partial_word_chars?: (Array[String]) -> bool
+
+        def word_chars?: (Array[String]) -> bool
+
+        def closest_node: (Array[String]) -> Node[TValue]
+      end
+    end
+  end
+end

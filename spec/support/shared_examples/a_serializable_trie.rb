@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 shared_examples_for 'a serializable trie' do
-  let(:tmp_path) { File.join ::SPEC_ROOT, 'tmp' }
+  let(:tmp_path) { File.join SPEC_ROOT, 'tmp' }
   let(:filepath) { File.join tmp_path, "trie-root.#{file_format}" }
 
   context 'with an uncompressed trie' do
@@ -12,7 +12,7 @@ shared_examples_for 'a serializable trie' do
     end
   end
 
-  context 'with an compressed trie' do
+  context 'with a compressed trie' do
     let(:trie) { Rambling::Trie.load filepath }
 
     before { Rambling::Trie.dump trie_to_serialize.compress!, filepath }

@@ -3,6 +3,24 @@
 shared_examples_for 'a trie node implementation' do
   it_behaves_like 'a trie node'
 
+  describe '#first_child' do
+    context 'when the node has no children' do
+      it 'returns nil' do
+        expect(node.first_child).to be_nil
+      end
+    end
+
+    context 'when the node has children' do
+      let(:raw_node) { Rambling::Trie::Nodes::Raw.new }
+
+      before { add_word raw_node, 'hi' }
+
+      it 'returns the first child node' do
+        expect(raw_node.first_child).to eq raw_node[:h]
+      end
+    end
+  end
+
   describe '#partial_word?' do
     context 'when the chars array is empty' do
       it 'returns true' do
@@ -143,6 +161,20 @@ shared_examples_for 'a trie node implementation' do
       it 'does not add any other words found' do
         words = node.match_prefix(%w(m p m p o r t a n t l y)).to_a
         expect(words).not_to include 'import', 'important', 'importantly'
+      end
+    end
+
+    context 'when the chars do not contain any full words' do
+      it 'does not return any words' do
+        words = node.match_prefix(%w(m p o r)).to_a
+        expect(words).to be_empty
+      end
+    end
+
+    context 'when chars match a child terminal node exactly' do
+      it 'yields the matching word' do
+        words = node.match_prefix(%w(m p o r t)).to_a
+        expect(words).to include 'import'
       end
     end
   end
